@@ -1,6 +1,6 @@
 # 淦！小米安全访问
 
-这是一个面向小米和 Redmi HyperOS 的 LSPosed 模块。它把部分照片、视频和文件选择请求交给 Android 原生文件选择器（DocumentsUI）。模块使用 libxposed API 102，包名为 `cn.wangyupwp.hyperospicker`。
+这是一个面向小米和 Redmi HyperOS 的 LSPosed 模块。它把部分照片、视频和文件选择请求交给 Android 原生文件选择器（DocumentsUI）。模块使用 libxposed API 102。
 
 ## 软件介绍
 
@@ -16,7 +16,7 @@
 2. 按需勾选作用域。`com.android.photopicker` 对应照片和视频，`com.android.fileexplorer` 对应小米文件管理。
 3. 重启手机或对应应用进程，再从其他应用发起选择请求。
 
-从旧包名 `dev.local.hyperospicker` 迁移，或同时安装过其他接管选择器的模块时，请先停用旧模块中重叠的作用域，避免同一次选择请求弹出两个界面。
+同时安装过其他接管选择器的模块时，请先停用旧模块中重叠的作用域，避免同一次选择请求弹出两个界面。
 
 ## 编译方式
 
