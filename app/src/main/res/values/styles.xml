@@ -1,0 +1,16 @@
+<resources>
+    <style name="ModuleTheme" parent="@android:style/Theme.Material.Light.NoActionBar">
+        <item name="android:fontFamily">sans-serif</item>
+        <item name="android:colorAccent">@color/module_accent</item>
+        <item name="android:windowBackground">@color/module_background</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
+    </style>
+    <color name="module_background">#F5F6F8</color>
+    <color name="module_surface">#FFFFFF</color>
+    <color name="module_text">#191A1D</color>
+    <color name="module_secondary">#555C68</color>
+    <color name="module_accent">#005CCB</color>
+    <color name="module_accent_surface">#E9F2FF</color>
+    <color name="module_ripple">#19005CCB</color>
+</resources>

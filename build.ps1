@@ -71,7 +71,7 @@ try {
     Invoke-BuildTool (Join-Path $tools 'aapt2.exe') @('compile','--dir',(Join-Path $source 'res'),'-o',$resources)
     Invoke-BuildTool (Join-Path $tools 'aapt2.exe') @('link','--manifest',(Join-Path $source 'AndroidManifest.xml'),
         '-I',$androidJar,'--java',$generated,'--min-sdk-version','33','--target-sdk-version','36',
-        '--version-code','8','--version-name','1.5.1','-o',$unsigned,$resources)
+        '--version-code','10','--version-name','1.6.1','-o',$unsigned,$resources)
 
     $sources = @(Get-ChildItem -Recurse -File -Filter '*.java' -Path (Join-Path $source 'java'),$generated |
         ForEach-Object { $_.FullName })

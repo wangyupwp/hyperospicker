@@ -15,14 +15,14 @@ import android.util.Log;
 
 import io.github.libxposed.api.XposedModule;
 
+import static cn.wangyupwp.hyperospicker.PickerLog.Event.*;
+
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
 public final class PickerModule extends XposedModule {
     private static final String TAG = "HyperOSPicker";
-    private static final String PHOTOS = "com.android.photopicker";
-    private static final String XIAOMI_FILES = "com.android.fileexplorer";
     private static final String[] DOCUMENTS_PACKAGES = {
             "com.android.documentsui", "com.google.android.documentsui"
     };
@@ -42,8 +42,8 @@ public final class PickerModule extends XposedModule {
         }
 
         switch (host) {
-            case PHOTOS -> register(param, "com.android.photopicker.hyper.HyperMainActivity", true);
-            case XIAOMI_FILES -> register(param, "com.android.fileexplorer.picker.PickMainNavigatorActivity", false);
+            case PickerLog.PHOTOS -> register(param, "com.android.photopicker.hyper.HyperMainActivity", true);
+            case PickerLog.XIAOMI_FILES -> register(param, "com.android.fileexplorer.picker.PickMainNavigatorActivity", false);
             default -> { }
         }
     }
@@ -65,7 +65,9 @@ public final class PickerModule extends XposedModule {
                         || activity.getClass() != picker) {
                     return chain.proceed();
                 }
-                List<Intent> candidates = resolveRequests(activity, photo);
+                ComponentName resultReceiver = activity.getCallingActivity();
+                String callerPackage = PickerLog.callerPackage(activity, resultReceiver);
+                List<Intent> candidates = resolveRequests(activity, photo, resultReceiver, callerPackage);
                 if (candidates.isEmpty()) {
                     return chain.proceed();
                 }
@@ -74,22 +76,28 @@ public final class PickerModule extends XposedModule {
                 try {
                     lifecycleInvoker.invokeSpecial(activity, (Bundle) null);
                 } catch (Exception | LinkageError failed) {
+                    PickerLog.record(activity, callerPackage, INITIALIZE_FAILED);
                     log(Log.WARN, TAG, "Could not initialize the forwarding activity", failed);
                     return chain.proceed();
                 }
 
                 // After superclass onCreate, never reenter the vendor picker.
                 if (activity.isFinishing()) {
+                    PickerLog.record(activity, callerPackage, SOURCE_FINISHING);
                     return null;
                 }
                 try {
-                    if (!launchDocuments(activity, candidates)) {
+                    if (launchDocuments(activity, candidates)) {
+                        PickerLog.record(activity, callerPackage, FORWARDED);
+                    } else {
+                        PickerLog.record(activity, callerPackage, LAUNCH_FAILED);
                         log(Log.WARN, TAG, "DocumentsUI rejected the forwarded request");
                     }
                 } finally {
                     try {
                         finishInvoker.invokeSpecial(activity);
                     } catch (Exception | LinkageError failed) {
+                        PickerLog.record(activity, callerPackage, CLOSE_FAILED);
                         log(Log.WARN, TAG, "Could not close the forwarding activity", failed);
                         try {
                             activity.finish();
@@ -116,16 +124,19 @@ public final class PickerModule extends XposedModule {
         throw new NoSuchMethodException(start.getName() + ".onCreate(Bundle)");
     }
 
-    private List<Intent> resolveRequests(Activity activity, boolean photo) {
+    private List<Intent> resolveRequests(
+            Activity activity, boolean photo, ComponentName resultReceiver, String callerPackage) {
         Intent original = activity.getIntent();
-        if (activity.isFinishing() || activity.getCallingActivity() == null
+        if (activity.isFinishing() || resultReceiver == null
                 || original == null || original.getSelector() != null) {
+            PickerLog.record(activity, callerPackage, SKIPPED_REQUEST);
             return List.of();
         }
 
         try {
             Intent forwarded = photo ? photoRequest(original) : fileRequest(original);
             if (forwarded == null) {
+                PickerLog.record(activity, callerPackage, SKIPPED_REQUEST);
                 return List.of();
             }
             forwarded.setComponent(null);
@@ -142,8 +153,12 @@ public final class PickerModule extends XposedModule {
                 candidates.add(new Intent(forwarded)
                         .setComponent(new ComponentName(target.packageName, target.name)));
             }
+            if (candidates.isEmpty()) {
+                PickerLog.record(activity, callerPackage, NO_DOCUMENTS_UI);
+            }
             return candidates;
         } catch (SecurityException | IllegalArgumentException | BadParcelableException unavailable) {
+            PickerLog.record(activity, callerPackage, RESOLVE_FAILED);
             log(Log.WARN, TAG, "Could not resolve DocumentsUI");
             return List.of();
         }
