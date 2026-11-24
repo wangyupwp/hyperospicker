@@ -71,7 +71,7 @@ try {
     Invoke-BuildTool (Join-Path $tools 'aapt2.exe') @('compile','--dir',(Join-Path $source 'res'),'-o',$resources)
     Invoke-BuildTool (Join-Path $tools 'aapt2.exe') @('link','--manifest',(Join-Path $source 'AndroidManifest.xml'),
         '-I',$androidJar,'--java',$generated,'--min-sdk-version','33','--target-sdk-version','36',
-        '--version-code','7','--version-name','1.5','-o',$unsigned,$resources)
+        '--version-code','8','--version-name','1.5.1','-o',$unsigned,$resources)
 
     $sources = @(Get-ChildItem -Recurse -File -Filter '*.java' -Path (Join-Path $source 'java'),$generated |
         ForEach-Object { $_.FullName })
@@ -106,9 +106,18 @@ try {
     $apk = Join-Path $scratch 'HyperOSPicker.apk'
     Invoke-BuildTool (Join-Path $tools 'zipalign.exe') @('-f','4',$unsigned,$aligned)
     $apkSigner = Join-Path $tools 'apksigner.bat'
-    Invoke-BuildTool $apkSigner (@('sign') + $signingOptions + @('--out',$apk,$aligned))
+    Invoke-BuildTool $apkSigner (@('sign') + $signingOptions + @(
+        '--v1-signing-enabled','false',
+        '--v2-signing-enabled','false',
+        '--v3-signing-enabled','true',
+        '--v4-signing-enabled','false',
+        '--out',$apk,$aligned))
     $verification = @(Invoke-BuildTool $apkSigner @('verify','--verbose','--print-certs',$apk))
     $verification | Write-Output
+    if (-not ($verification -match '^Verified using v3 scheme \(APK Signature Scheme v3\): true$') -or
+        ($verification -match '^Verified using v(?:1|2|4) scheme .*: true$')) {
+        throw 'The APK was not verified as APK Signature Scheme v3 only.'
+    }
     if ($ExpectedCertificateSha256) {
         $expected = $ExpectedCertificateSha256.Replace(':', '').ToLowerInvariant()
         $certificates = @($verification | Select-String '^Signer #\d+ certificate SHA-256 digest: ([0-9a-f]+)$')

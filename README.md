@@ -12,7 +12,7 @@
 
 ## 安装与启用
 
-1. 安装编译生成的 APK，在支持 API 102 的 LSPosed 管理器中启用模块。
+1. 从 [GitHub Releases](https://github.com/wangyupwp/hyperospicker/releases) 下载 APK，或自行编译。安装后，在支持 API 102 的 LSPosed 管理器中启用模块。
 2. 按需勾选作用域。`com.android.photopicker` 对应照片和视频，`com.android.fileexplorer` 对应小米文件管理。
 3. 重启手机或对应应用进程，再从其他应用发起选择请求。
 
@@ -33,7 +33,7 @@ $env:ANDROID_HOME = 'C:\Android\Sdk'
 powershell -NoProfile -ExecutionPolicy Bypass -File .\build.ps1
 ```
 
-生成的 APK 位于 `build/HyperOSPicker.apk`。默认使用项目本地的调试密钥签名，脚本会验证签名后输出 APK。
+生成的 APK 位于 `build/HyperOSPicker.apk`。构建脚本仅启用 APK Signature Scheme v3，并在验证签名后输出 APK。未指定密钥库时使用项目本地的调试密钥。
 
 发布时可用自己的密钥库签名。请替换示例中的路径和别名，并在本地终端按提示输入密码。
 
