@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">淦！小米安全访问</string>
+    <string name="module_description">让照片和文件选择请求使用 Android 原生文件选择器</string>
+    <string name="scope_help">在 LSPosed 中启用本模块，勾选照片选择器和小米文件管理，然后重启对应应用进程。</string>
+    <string name="open_special_access">打开系统特殊应用权限</string>
+    <string name="open_settings">当前系统没有专用入口，已尝试打开系统设置。</string>
+    <string name="settings_unavailable">无法打开系统设置。</string>
+</resources>
