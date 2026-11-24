@@ -1,15 +1,46 @@
 # 淦！小米安全访问
 
-面向 Android 16 HyperOS 的 LSPosed 模块，使用现代 libxposed API 102。安装 `build/HyperOSPicker.apk` 后，在 LSPosed 管理器中启用模块，勾选 `com.android.photopicker` 和 `com.android.fileexplorer`，再重启对应进程。
+这是一个面向小米和 Redmi HyperOS 的 LSPosed 模块。它把部分照片、视频和文件选择请求交给 Android 原生文件选择器（DocumentsUI）。模块使用 libxposed API 102，包名为 `cn.wangyupwp.hyperospicker`。
 
-1.5 起包名为 `cn.wangyupwp.hyperospicker`。Android 会把它当作新应用安装。请先在 LSPosed 停用旧包 `dev.local.hyperospicker`，避免两个模块同时处理选择请求。
+## 软件介绍
 
-- 进入目标照片选择器的请求会尝试转给 Android 原生 DocumentsUI，并限制为照片或视频。调用方允许多选时会启用原生多选。原生文件选择器无法按照片选择器的参数限制具体张数，返回的也是文档 URI。
-- 小米文件选择界面收到的标准打开文件、取文件和选择文件夹请求会尝试转给 DocumentsUI。转发副本只设置结果回传标志，原请求里的 URI 授权标志会被清除。创建文档和厂商专用请求由原界面处理。
-- 模块没有桌面入口。可从 LSPosed 的模块设置打开系统特殊应用权限页面，由系统处理确认和等待。
+- **照片和视频**　应用请求选图或选视频时，模块尝试打开 DocumentsUI。允许多选的请求会启用原生多选。DocumentsUI 无法沿用照片选择器指定的具体张数上限，返回的是文档 URI，因此依赖照片选择器专用 URI 的应用可能不兼容。
+- **文件和文件夹**　小米文件管理收到标准的打开文件、取文件或选择文件夹请求时，模块尝试转给 DocumentsUI。创建文档和小米专用请求由原界面处理。
+- **模块设置**　模块默认没有桌面图标。可从 LSPosed 的「模块设置」打开系统特殊应用权限页面，确认与等待由系统处理。
 
-转发优先使用系统的 `com.android.documentsui`，也支持系统的 `com.google.android.documentsui`。已经由 DocumentsUI 处理的请求直接继续。模块在启动 DocumentsUI 前先调用原界面的父类初始化，让 AndroidX 恢复组件状态，转发后关闭原界面。找不到目标时保留原选择流程。如果初始化完成后系统拒绝启动所有目标，则结束此次选择。其他 HyperOS 构建可能使用不同的源组件。
+模块依赖 HyperOS 选择器和 DocumentsUI 的系统组件。不同机型或系统版本可能使用不同组件。找不到可用的 DocumentsUI 时，请求会继续走原选择流程。
 
-从旧版升级后，重启照片选择器和小米文件管理进程。如果原版「不安全访问」也已启用，先在 LSPosed 关闭它的照片选择器作用域，避免两个模块同时处理同一次请求。
+## 安装与启用
 
-在 Windows 上安装 JDK 17、Android SDK Platform 36 和 Build Tools 36.0.0，配置 `JAVA_HOME` 和 `ANDROID_HOME`，然后运行 `powershell -ExecutionPolicy Bypass -File .\build.ps1`。脚本会从 Maven Central 取得编译用的 libxposed API，使用项目本地调试密钥签名 APK，并校验签名。
+1. 安装编译生成的 APK，在支持 API 102 的 LSPosed 管理器中启用模块。
+2. 按需勾选作用域。`com.android.photopicker` 对应照片和视频，`com.android.fileexplorer` 对应小米文件管理。
+3. 重启手机或对应应用进程，再从其他应用发起选择请求。
+
+从旧包名 `dev.local.hyperospicker` 迁移，或同时安装过其他接管选择器的模块时，请先停用旧模块中重叠的作用域，避免同一次选择请求弹出两个界面。
+
+## 编译方式
+
+项目附带 Windows PowerShell 构建脚本。准备 JDK 17、Android SDK Platform 36 和 Build Tools 36.0.0。首次编译需要能访问 Maven Central，以下载编译用的 libxposed API。
+
+在 PowerShell 里执行。请把示例路径换成自己的安装路径。
+
+```powershell
+git clone https://github.com/wangyupwp/hyperospicker.git
+Set-Location hyperospicker
+
+$env:JAVA_HOME = 'C:\Program Files\Java\jdk-17'
+$env:ANDROID_HOME = 'C:\Android\Sdk'
+powershell -NoProfile -ExecutionPolicy Bypass -File .\build.ps1
+```
+
+生成的 APK 位于 `build/HyperOSPicker.apk`。默认使用项目本地的调试密钥签名，脚本会验证签名后输出 APK。
+
+发布时可用自己的密钥库签名。请替换示例中的路径和别名，并在本地终端按提示输入密码。
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\build.ps1 -KeyStore 'C:\keys\release.jks' -KeyAlias 'release'
+```
+
+同一包名的后续版本要使用相同的签名密钥才能覆盖安装。请将密钥库和密码保存在仓库之外。
+
+项目采用 [GPL-3.0](LICENSE)。
